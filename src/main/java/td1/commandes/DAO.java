@@ -1,5 +1,6 @@
 package td1.commandes;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -51,38 +52,54 @@ public class DAO {
      * ensemble des différents produits commandés
      */
     public Set<Produit> produits() {
-        return commandes.stream()
-                .flatMap(c -> c.lignes().stream())
-                .map(Paire::fst)
-                .collect(Collectors.toSet());
+        Set<Produit> rtr = new HashSet<>();
+        for(Commande commande : commandes){
+            for(Paire<Produit, Integer> p : commande.lignes()){
+                rtr.add(p.fst());
+            }
+        }
+        return rtr;
     }
 
     /**
      * liste des commandes vérifiant un prédicat
      */
     public List<Commande> selectionCommande(Predicate<Commande> p) {
-        return commandes.stream()
-            .filter(p)
-            .collect(Collectors.toList());
+        List<Commande> rtr = new ArrayList<>();
+        for(Commande commande: commandes){
+            if(p.test(commande)){
+                rtr.add(commande);
+            }
+        }
+        return rtr;
     }
 
     /**
      * liste des commandes dont au moins une ligne vérifie un prédicat
      */
     public List<Commande> selectionCommandeSurExistanceLigne(Predicate<Paire<Produit,Integer>> p) {
-        return commandes.stream()
-            .filter(c -> c.lignes().stream().anyMatch(p))
-            .collect(Collectors.toList());
+        List<Commande> rtr = new ArrayList<>();
+        for(Commande commande: commandes){
+            for (Paire<Produit, Integer> ligne : commande.lignes()){
+                if(p.test(ligne)){
+                    rtr.add(commande);
+                }
+            }
+        }
+        return rtr;
     }
 
     /**
      * ensemble des différents produits commandés vérifiant un prédicat
      */
     public Set<Produit> selectionProduits(Predicate<Produit> p) {
-        return produits()
-            .stream()
-            .filter(p)
-            .collect(Collectors.toSet());
+        Set<Produit> rtr = new HashSet<>();
+        for(Produit produit : produits()){
+            if(p.test(produit)){
+                rtr.add(produit);
+            }
+        }
+        return rtr;
     }
 
 }
