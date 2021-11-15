@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.stream.Collectors;
 
 import td1.paires.Paire;
 
@@ -12,7 +13,7 @@ public class Commande {
     private List<Paire<Produit, Integer>> lignes;
     private Function<Paire<Produit, Integer>, String> fml;
 
-    private static final Function<Paire<Produit, Integer>, String> formatteurLigne = p -> String.format("%s x%d\n",
+    private static final Function<Paire<Produit, Integer>, String> formatteurLigne = p -> String.format("%s x %d\n",
             p.fst(), p.snd());
 
 
@@ -32,12 +33,7 @@ public class Commande {
 
     @Override
     public String toString() {
-        StringBuilder str = new StringBuilder();
-        str.append("Commande\n");
-        for (Paire<Produit, Integer> ligne : lignes) {
-            str.append(String.format("%s x%d\n", ligne.fst(), ligne.snd()));
-        }
-        return str.toString();
+        return lignes.stream().map(fml).collect(Collectors.joining("\n", "Commande\n", "\n")).toString();
     }
 
     /**
@@ -62,11 +58,14 @@ public class Commande {
     }
 
     public Double cout(Function<Paire<Produit, Integer>, Double> calculLigne) {
-        double rtr = 0;
+        return normaliser().lignes.stream().map(l -> calculLigne.apply(l)).reduce(0.0, Double::sum);
+       /* double rtr = 0;
         for (Paire<Produit, Integer> l : normaliser().lignes) {
             rtr += calculLigne.apply(l);
         }
         return rtr;
+
+        */
     }
 
     public String affiche(Function<Paire<Produit, Integer>, Double> calculLigne) {
