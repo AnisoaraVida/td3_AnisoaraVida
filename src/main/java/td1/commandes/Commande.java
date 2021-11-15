@@ -58,7 +58,7 @@ public class Commande {
     }
 
     public Double cout(Function<Paire<Produit, Integer>, Double> calculLigne) {
-        return normaliser().lignes.stream().map(l -> calculLigne.apply(l)).reduce(0.0, Double::sum);
+        return normaliser().lignes.stream().map(l -> calculLigne.apply(l)).reduce(0.0, (x,y)-> x+y);
        /* double rtr = 0;
         for (Paire<Produit, Integer> l : normaliser().lignes) {
             rtr += calculLigne.apply(l);
@@ -66,6 +66,12 @@ public class Commande {
         return rtr;
 
         */
+    }
+
+    private static <T, U> Map<T, List<U>> regruper(List<Paire<T, U>> lignes) {
+        Map<T, List<U>> rtr = new HashMap<>();
+        lignes.forEach(l -> rtr.computeIfAbsent(l.fst(), k -> new ArrayList<>()).add(l.snd()));
+        return rtr;
     }
 
     public String affiche(Function<Paire<Produit, Integer>, Double> calculLigne) {
