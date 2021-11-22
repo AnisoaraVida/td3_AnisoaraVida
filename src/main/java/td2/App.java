@@ -8,9 +8,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
+import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import td1.paires.Paire;
+import td1.paires.IPaire;
 import td2.universite.Annee;
 import td2.universite.Etudiant;
 import td2.universite.Matiere;
@@ -80,7 +86,9 @@ public class App {
             this.snd = snd;
         }
         @Override public String toString() { return String.format("(%s,%s)",fst.toString(),snd.toString()); }
+
     }
+
 
     public static <T> Predicate<T> conjonction(List<Predicate<T>> conditions) {
         Predicate<T> pred = x -> true;
@@ -174,6 +182,8 @@ public class App {
         });
     }
 
+
+
     public static void afficheSiv2(String entete, Predicate<Etudiant> filtre, Annee a,
             Function<Etudiant, String> repr) {
         System.out.println(String.format("\n**%s\n", entete));
@@ -264,6 +274,42 @@ public class App {
     // ne plante pas (aDEF évalué avant naPasLaMoyenne)
     public static final Predicate<Etudiant> session2v2 = aDEF.or(aNoteEliminatoire).or(naPasLaMoyennev1);
 
+
+    //TD3 : Utilisation des Streams
+
+    // matières d'une année
+    public static final Function<Annee, Stream<Matiere>> matieresA = annee -> annee.ues().stream().flatMap(ue -> ue.ects().keySet().stream() );
+
+    // matières d'un étudiant
+    public static final Function<Etudiant, Stream<Matiere>> matieresE = etudiant -> matieresA.apply(etudiant.annee());
+
+    // matières coefficientées d'un étudiant (version Entry)
+    public static final Function<Etudiant, Stream<Entry<Matiere, Integer>>> matieresCoefE_= etudiant -> etudiant.annee().ues().stream().flatMap(ue -> ue.ects().entrySet().stream());
+
+    // transformation d'une Entry en une Paire
+   // public static final Function<Entry<Matiere, Integer>, Paire<Matiere, Integer>> entry2paire =
+
+    // matières coefficientées d'un étudiant (version Paire)
+    public static final Function<Etudiant, Stream<Paire<Matiere, Integer>>> matieresCoefE = etudiant ->  matieresE.apply(etudiant)
+              .map(paire  -> new Paire<>( etudiant.notes().get(paire.fst()), paire.snd()))
+              .collect(Collector.toList());
+
+    // accumulateur pour calcul de la moyenne
+    // ((asomme, acoefs), (note, coef)) -> (asomme+note*coef, acoef+coef)
+    public static final BinaryOperator<Paire<Double, Integer>> accumulateurMoyenne = (note, coef) -> new Paire<>(note.fst + note.fst * coef.fst, coef.snd+coef.snd );
+
+    // zero (valeur initiale pour l'accumulateur)
+    public static final Paire<Double, Integer> zero = new Paire<>(0.0, 0);
+
+
+
+    // obtention de la liste de (note, coef) pour les matières d'un étudiant
+    // 1. obtenir les (matière, coef)s
+    // 2. mapper pour obtenir les (note, coef)s, null pour la note si l'étudiant est DEF dans cette matière
+    public static final Function<Etudiant, List<Paire<Double, Integer>>> notesPonderees = etudiant -> matieresCoefE_.apply(etudiant)
+            .map(paire -> new Paire<>(etudiant.notes().get(paire.fst()), paire.snd())).collect(Collectors.toList());
+
+
     public static void question3() {
         Matiere m1 = new Matiere("MAT1");
         Matiere m2 = new Matiere("MAT2");
@@ -301,7 +347,10 @@ public class App {
                 e -> String.format("%s %s : %.2f", e.prenom(), e.nom(), moyenneIndicative.apply(e)));
         afficheSiv2("TOUS LES ETUDIANTS SOUS LA MOYENNE INDICATIVE", naPasLaMoyenneGeneralise.apply(moyenneIndicative),
                 a1, e -> String.format("%s %s : %.2f", e.prenom(), e.nom(), moyenneIndicative.apply(e)));
+
     }
+
+
 
     public static void main(String[] args) {
         question1_1();
