@@ -87,6 +87,11 @@ public class App {
         }
         @Override public String toString() { return String.format("(%s,%s)",fst.toString(),snd.toString()); }
 
+
+        public T fst() { return fst; }
+
+
+        public U snd() { return snd; }
     }
 
 
@@ -287,12 +292,11 @@ public class App {
     public static final Function<Etudiant, Stream<Entry<Matiere, Integer>>> matieresCoefE_= etudiant -> etudiant.annee().ues().stream().flatMap(ue -> ue.ects().entrySet().stream());
 
     // transformation d'une Entry en une Paire
-   // public static final Function<Entry<Matiere, Integer>, Paire<Matiere, Integer>> entry2paire =
+    public static final Function<Entry<Matiere, Integer>, Paire<Matiere, Integer>> entry2paire = etudiant -> new Paire<>(
+            etudiant.getKey(), etudiant.getValue());
 
     // matières coefficientées d'un étudiant (version Paire)
-    public static final Function<Etudiant, Stream<Paire<Matiere, Integer>>> matieresCoefE = etudiant ->  matieresE.apply(etudiant)
-              .map(paire  -> new Paire<>( etudiant.notes().get(paire.fst()), paire.snd()))
-              .collect(Collector.toList());
+    public static final Function<Etudiant, Stream<Paire<Matiere, Integer>>> matieresCoefE = etudiant ->  matieresCoefE_.apply(etudiant).map(entry2paire);
 
     // accumulateur pour calcul de la moyenne
     // ((asomme, acoefs), (note, coef)) -> (asomme+note*coef, acoef+coef)
@@ -306,8 +310,9 @@ public class App {
     // obtention de la liste de (note, coef) pour les matières d'un étudiant
     // 1. obtenir les (matière, coef)s
     // 2. mapper pour obtenir les (note, coef)s, null pour la note si l'étudiant est DEF dans cette matière
-    public static final Function<Etudiant, List<Paire<Double, Integer>>> notesPonderees = etudiant -> matieresCoefE_.apply(etudiant)
-            .map(paire -> new Paire<>(etudiant.notes().get(paire.fst()), paire.snd())).collect(Collectors.toList());
+    public static final Function<Etudiant, List<Paire<Double, Integer>>> notesPonderees = etudiant -> matieresCoefE.apply(etudiant)
+            .map(p -> new Paire<>(etudiant.notes().get(p.fst()), p.snd()))
+            .collect(Collectors.toList());
 
 
     public static void question3() {
